@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8">
+  <title>Instant Notification Test</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #ffe0ec, #ffe8f1);
+      font-family: Arial, sans-serif;
+      color: #4a2c2a;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      background: #fff0f5;
+      padding: 30px;
+      border-radius: 20px;
+      border: 2px solid #ffb6c1;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #e91e63;
+      font-size: 28px;
+    }
+    .test-countdown {
+      font-size: 24px;
+      margin: 20px 0;
+      color: #d81b60;
+    }
+    #notify-btn {
+      background: #e91e63;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 20px 0;
+    }
+    #notify-btn.enabled {
+      background: #4CAF50;
+    }
+    .status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Instant Notification Test</h1>
+    <p>This will trigger a test notification <strong>60 seconds</strong> after enabling:</p>
+    
+    <div class="test-countdown">
+      Time until test: <span id="countdown">60</span> seconds
+    </div>
+    
+    <button id="notify-btn">🔔 Enable Test Notifications</button>
+    
+    <div class="status" id="status">
+      Waiting for notification permission...
+    </div>
+  </div>
+
+  <script>
+    // DOM Elements
+    const notifyBtn = document.getElementById('notify-btn');
+    const countdownEl = document.getElementById('countdown');
+    const statusEl = document.getElementById('status');
+    
+    // Test Configuration
+    let testTriggerTime = null;
+    let countdownInterval = null;
+    
+    // Check notification support
+    if (!('Notification' in window)) {
+      statusEl.textContent = "Notifications not supported in this browser";
+      notifyBtn.disabled = true;
+    } else if (Notification.permission === 'granted') {
+      notifyBtn.textContent = "🔔 Ready for Test";
+      statusEl.textContent = "Click button to start 60-second countdown";
+    }
+    
+    // Button click handler
+    notifyBtn.addEventListener('click', () => {
+      if (Notification.permission !== 'granted') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            startTestCountdown();
+          } else {
+            statusEl.textContent = "Notification permission denied";
+          }
+        });
+      } else {
+        startTestCountdown();
+      }
+    });
+    
+    function startTestCountdown() {
+      // Set trigger time (now + 60 seconds)
+      testTriggerTime = new Date();
+      testTriggerTime.setSeconds(testTriggerTime.getSeconds() + 60);
+      
+      // Update UI
+      notifyBtn.textContent = "🔔 Test Running";
+      notifyBtn.classList.add('enabled');
+      notifyBtn.disabled = true;
+      statusEl.textContent = `Test notification scheduled for ${testTriggerTime.toLocaleTimeString()}`;
+      
+      // Start countdown
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 1000);
+      
+      // Start checking for trigger time
+      setTimeout(checkForNotification, 1000);
+    }
+    
+    function updateCountdown() {
+      const now = new Date();
+      const secondsLeft = Math.round((testTriggerTime - now) / 1000);
+      
+      if (secondsLeft <= 0) {
+        countdownEl.textContent = "0";
+        clearInterval(countdownInterval);
+      } else {
+        countdownEl.textContent = secondsLeft;
+      }
+    }
+    
+    function checkForNotification() {
+      const now = new Date();
+      
+      if (now >= testTriggerTime) {
+        showTestNotification();
+        return;
+      }
+      
+      // Check again in 1 second
+      setTimeout(checkForNotification, 1000);
+    }
+    
+    function showTestNotification() {
+      if (Notification.permission === 'granted') {
+        new Notification('🎉 Test Successful!', {
+          body: `This confirms your notifications work!\nTriggered at: ${new Date().toLocaleTimeString()}`,
+          icon: 'https://i.imgur.com/7k7EH3m.png',
+          requireInteraction: true
+        });
+        
+        statusEl.innerHTML = "<span style='color:#4CAF50'>✓ Test completed! Check your notifications</span>";
+        notifyBtn.textContent = "🔔 Test Complete";
+      }
+    }
+  </script>
+</body>
+</html>
